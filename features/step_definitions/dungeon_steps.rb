@@ -1,34 +1,46 @@
 class Dungeon
-  attr_accessor :entrance, :treasure_chamber
+  def initialize
+    @entrance = Room.new(self)
+  end
+  
+  attr_reader :entrance
+  attr_accessor :treasure_chamber
 end
 
 class Room
+  def initialize(dungeon)
+    @dungeon = dungeon
+  end
   
-  attr_accessor :east, :south, :west
+  [:north, :south, :east, :west].each do |direction|
+    define_method "create_room_to_the_#{direction}" do
+      instance_variable_set "@#{direction}", Room.new(@dungeon)
+    end
+    
+    attr_reader direction
+  end
   
+  def designate_as_treasure_chamber
+    @dungeon.treasure_chamber = self
+  end
 end
+
 
 Given /^there is an entrance$/ do
   @dungeon = Dungeon.new
-  @dungeon.entrance = Room.new
   @previous_room = @dungeon.entrance
 end
 
 Given /^a room to the east of the entrance$/ do
-  current_room = Room.new
-  @previous_room.east = current_room
-  @previous_room = current_room
+  @previous_room = @previous_room.create_room_to_the_east
 end
 
 Given /^a second room to the south of the first room$/ do
-  current_room = Room.new
-  @previous_room.south = current_room
-  @previous_room = current_room
+  @previous_room = @previous_room.create_room_to_the_south
 end
 
 Given /^a treasure chamber to the west of the second room$/ do
-  @dungeon.treasure_chamber = Room.new
-  @previous_room.west = @dungeon.treasure_chamber
+  @previous_room.create_room_to_the_west.designate_as_treasure_chamber
 end
 
 When /^I enter the dungeon$/ do
